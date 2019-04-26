@@ -184,10 +184,62 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 	return res;
 }
 
+static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+	int res;
+	char judul[1000];
+	char judulLengkap[1000];
+	sprintf(judul, "%s", path);
+	enkrip(judul);
+	sprintf(judulLengkap, "%s", dirpath);
+	strcat(judulLengkap, judul);
+	
+	if(strstr(judul, "@ZA>AXio")){
+		mode = 0640;
+		strcat(judulLengkap, "`[S%");
+	}
+	
+	if (S_ISREG(mode)) {
+		res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+		if (res >= 0)
+			res = close(res);
+	} else if (S_ISFIFO(mode))
+		res = mkfifo(path, mode);
+	else
+		res = mknod(path, mode, rdev);
+	if (res == -1)
+		return -errno;
+		
+	return 0;
+}
+
+static int xmp_mkdir(const char *path, mode_t mode)
+{
+	int res;
+	char judul[1000];
+	char judulLengkap[1000];
+	sprintf(judul, "%s", path);
+	enkrip(judul);
+	sprintf(judulLengkap, "%s", dirpath);
+	strcat(judulLengkap, judul);
+	
+	if(strstr(judul, "@ZA>AXio"))
+		mode = 0750;
+	
+	res = mkdir(judulLengkap, mode);
+	
+	if(res == 1)
+		return -errno;
+	return 0;
+}
+
 static struct fuse_operations xmp_oper = {
 	.getattr	= xmp_getattr,
 	.readdir	= xmp_readdir,
 	.read		= xmp_read,
+	.mkdir = xmp_mkdir,
+    .chmod = xmp_chmod,
+	.mknod = xmp_mknod
 };
 
 int main(int argc, char *argv[])
