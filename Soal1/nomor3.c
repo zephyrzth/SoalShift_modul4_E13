@@ -37,8 +37,8 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
         strcpy(user,pw->pw_name);
         strcpy(group,gr->gr_name);
         strftime(waktu, 50, "%Y-%m-%d %H:%M:%S", localtime(&stbuf->st_mtime));
-        printf("ini file, nama sama grup : %s %s %s\n",path,user,group);
-        printf("ini waktu %s\n",waktu);
+        //printf("ini file, nama sama grup : %s %s %s\n",path,user,group);
+        //printf("ini waktu %s\n",waktu);
 
         if(strcmp(user,"chipset")==0 || strcmp(user,"ic_controller")==0 /*&& flagread==0*/)
 	{
@@ -53,7 +53,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
                 	fprintf(file, "%s", isian);
 			fclose(file);
 
-                	printf("jancok %s\n",path);
+                	//printf("jancok %s\n",path);
 			remove(path);
 
         	}
