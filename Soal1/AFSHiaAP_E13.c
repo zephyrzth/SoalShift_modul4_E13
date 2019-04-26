@@ -58,7 +58,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	res = lstat(judulLengkap, stbuf);
 	
 	int flagread;
-        char user[100], group[100];
+        char user[100], group[100], waktu[100];
         sprintf(fpath,"%s%s",dirpath,path);
         struct passwd *pw = getpwuid(stbuf->st_uid);
         struct group  *gr = getgrgid(stbuf->st_gid);
