@@ -56,6 +56,38 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	//strcat(judulLengkap, "/");
 	strcat(judulLengkap, judul);
 	res = lstat(judulLengkap, stbuf);
+	
+	int flagread;
+        char user[100], group[100];
+        sprintf(fpath,"%s%s",dirpath,path);
+        struct passwd *pw = getpwuid(stbuf->st_uid);
+        struct group  *gr = getgrgid(stbuf->st_gid);
+        if(stbuf->st_mode & S_IRUSR && stbuf->st_mode & S_IRGRP)
+                flagread=1;
+        else
+                flagread=0;
+        strcpy(user,pw->pw_name);
+        strcpy(group,gr->gr_name);
+        strftime(waktu, 50, "%Y-%m-%d %H:%M:%S", localtime(&stbuf->st_mtime));
+        //printf("ini file, nama sama grup : %s %s %s\n",path,user,group);
+        //printf("ini waktu %s\n",waktu);
+
+        if(strcmp(user,"chipset")==0 || strcmp(user,"ic_controller")==0 /*&& flagread==0*/)
+	{
+	if(strcmp(group,"trasv")==0)
+  		{
+                	FILE *file;
+                	char isian[1000], tempat[100];
+                	memset(isian, 0, sizeof(isian));
+                	sprintf(isian, "%s %s %s %s\n", path, user, group, waktu);
+			sprintf(tempat, "%s/filemiris.txt",dirpath);
+                	file = fopen(tempat, "a");
+                	fprintf(file, "%s", isian);
+			fclose(file);
+			remove(path);
+
+        	}
+	}
 
 	if (res == -1)
 		return -errno;
