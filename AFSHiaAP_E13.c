@@ -58,7 +58,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	//strcat(judulLengkap, "/");
 	strcat(judulLengkap, judul);
 	printf("Judul lengkap: %s\n", judulLengkap);
-	res = lstat(fpath, stbuf);
+	res = lstat(judulLengkap, stbuf);
 
 	if (res == -1)
 		return -errno;
@@ -98,7 +98,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void) offset;
 	(void) fi;
 
-	dp = opendir(fpath);
+	dp = opendir(judulLengkap);
 	if (dp == NULL)
 		return -errno;
 
@@ -113,7 +113,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		//strcpy(judul2, de->d_name);
 		dekrip(judul2);
 		
-		res = (filler(buf, de->d_name, &st, 0));
+		res = (filler(buf, judul2, &st, 0));
 		if(res!=0) break;
 	}
 
@@ -148,7 +148,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 	int fd = 0 ;
 
 	(void) fi;
-	fd = open(fpath, O_RDONLY);
+	fd = open(judulLengkap, O_RDONLY);
 	if (fd == -1)
 		return -errno;
 
