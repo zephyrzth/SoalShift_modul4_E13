@@ -40,23 +40,24 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
         //printf("ini file, nama sama grup : %s %s %s\n",path,user,group);
         //printf("ini waktu %s\n",waktu);
 
-        if(strcmp(user,"chipset")==0 || strcmp(user,"ic_controller")==0 /*&& flagread==0*/)
+        if(flagread==0)
 	{
-	if(strcmp(group,"trasv")==0)
-  		{
-                	FILE *file;
-                	char isian[1000], tempat[100];
-                	memset(isian, 0, sizeof(isian));
-                	sprintf(isian, "%s %s %s %s\n", path, user, group, waktu);
-			sprintf(tempat, "%s/filemiris.txt",dirpath);
-                	file = fopen(tempat, "a");
-                	fprintf(file, "%s", isian);
-			fclose(file);
+		if(strcmp(user,"chipset")==0 || strcmp(user,"ic_controller")==0)
+		{
+			if(strcmp(group,"rusak")==0)
+  			{
+                		FILE *file;
+                		char isian[1000], tempat[100];
+                		memset(isian, 0, sizeof(isian));
+                		sprintf(isian, "%s %s %s %s\n", path, user, group, waktu);
+				sprintf(tempat, "%s/filemiris.txt",dirpath);
+                		file = fopen(tempat, "a");
+                		fprintf(file, "%s", isian);
+				fclose(file);
+				res = unlink(path); //ini harusnya di readdir
 
-                	//printf("jancok %s\n",path);
-			remove(path);
-
-        	}
+        		}
+		}
 	}
 
 	if (res == -1)
@@ -142,9 +143,6 @@ static int xmp_mkdir(const char *path, mode_t mode)
 {
 	int res;
 	res = mkdir(path, mode);
-	//char a[] = "/home/trasv/shift4/YOUTUBE/";
-	//strcat(a,res);
-	//chmod(res,
 	if (res == -1)
 		return -errno;
 
