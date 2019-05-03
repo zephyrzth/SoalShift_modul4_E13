@@ -213,11 +213,10 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
    Pada soal ini kita memodifikasi fungsi readdir, dimana disana kita mengambil owner, group owner dan apakah file itu bisa dibuka atau tidak dari setiap file dalam direktori ini. lalu jika ditemukan demikian maka akan disimpan dalam file bernama filemiris.txt berupa nama file, owner, group dan waktu terakhir. lalu terakhir dihapus.
    
    ```
-   static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		       off_t offset, struct fuse_file_info *fi)
+   static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
-  char fpath[1000];
-  char temp[1000];
+	char fpath[1000];
+	char temp[1000];
   	strcpy(temp,path);
   	
   	encrypt(temp);
@@ -307,12 +306,15 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
 }
    ```
 
+
    4. Pada folder YOUTUBER, setiap membuat folder permission foldernya akan otomatis menjadi 750. Juga ketika membuat file permissionnya akan otomatis menjadi 640 dan ekstensi filenya akan bertambah “.iz1”. File berekstensi “.iz1” tidak bisa diubah permissionnya dan memunculkan error bertuliskan “File ekstensi iz1 tidak boleh diubah permissionnya.”
    
    Jawab:
    
    Di sini, artinya kita harus menambahkan fungsi `mkdir` untuk menangani pembuatan folder pada FUSE dan `mknod` untuk menangani pembuatan file pada FUSE. Jadi pertama akan didefinisikan dulu fungsi untuk `mkdir` dan `mknod`, lalu diberi kondisi jika judul/direktori adalah kata "YOUTUBER" (tentunya kata tersebut nanti sudah dienkripsi ketika diproses), maka akan mengubah permission khusus pada saat membuat folder atau membuat file. Seperti berikut.
-   ```   
+
+
+```   
     static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
     {
       int res;
@@ -373,11 +375,14 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
 	 .mknod = xmp_mknod
    };
    ```
+   
+   
    5. Ketika mengedit suatu file dan melakukan save, maka akan terbuat folder baru bernama Backup kemudian hasil dari save tersebut akan disimpan pada backup dengan nama namafile_[timestamp].ekstensi. Dan ketika file asli dihapus, maka akan dibuat folder bernama RecycleBin, kemudian file yang dihapus beserta semua backup dari file yang dihapus tersebut (jika ada) di zip dengan nama namafile_deleted_[timestamp].zip dan ditaruh ke dalam folder RecycleBin (file asli dan backup terhapus). Dengan format [timestamp] adalah yyyy-MM-dd_HH:mm:ss
    
    Jawab :
    
    Pada soal ini kita memodifikasi 2 fungsi. yang pertama yaitu write, di write kita menambahkan sintaks untuk mengambil nama file, dan ekstensi yang telah diedit, juga mengambil waktu terakhir dimodifikasi dan membuat file baru di folder backup dengan format seperti di soal.
+   
    
    ```
    static int xmp_write(const char *path, const char *buf, size_t size,
@@ -538,8 +543,10 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
 }
 
    ```
+   
 
 lalu terakhir untuk mempermudah pengerjaan, dibuat fungsi untuk mengambil kejadian pertama dari sebuah character dari string, kalau strchr dari depan, fungsi ini mengambil dari belakang.
+
 
 ```
 int getLastCharPos(char *str, char chr){
@@ -557,4 +564,3 @@ int getLastCharPos(char *str, char chr){
  	return (int) (posChar-str);
 }
 ```
-
