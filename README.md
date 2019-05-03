@@ -212,8 +212,8 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
    
    Pada soal ini kita memodifikasi fungsi readdir, dimana disana kita mengambil owner, group owner dan apakah file itu bisa dibuka atau tidak dari setiap file dalam direktori ini. lalu jika ditemukan demikian maka akan disimpan dalam file bernama filemiris.txt berupa nama file, owner, group dan waktu terakhir. lalu terakhir dihapus.
    
-   ```
    
+```
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi){
 	char fpath[1000];
 	char temp[1000];
@@ -539,10 +539,8 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 	if (res == -1)
 		return -errno;
 
-	return 0;
-}
-
-   ```
+	return 0; }
+```
    
 
 lalu terakhir untuk mempermudah pengerjaan, dibuat fungsi untuk mengambil kejadian pertama dari sebuah character dari string, kalau strchr dari depan, fungsi ini mengambil dari belakang.
