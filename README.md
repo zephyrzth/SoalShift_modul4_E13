@@ -208,6 +208,105 @@ Group Name    : ‘rusak’
 Tidak dapat dibaca
 Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta akan menyimpan nama file, group ID, owner ID, dan waktu terakhir diakses dalam file “filemiris.txt” (format waktu bebas, namun harus memiliki jam menit detik dan tanggal) lalu menghapus “file bahaya” tersebut untuk mencegah serangan lanjutan dari LAPTOP_RUSAK.
 
+   Jawab :
+   
+   Pada soal ini kita memodifikasi fungsi readdir, dimana disana kita mengambil owner, group owner dan apakah file itu bisa dibuka atau tidak dari setiap file dalam direktori ini. lalu jika ditemukan demikian maka akan disimpan dalam file bernama filemiris.txt berupa nama file, owner, group dan waktu terakhir. lalu terakhir dihapus.
+   
+   ```
+   static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+		       off_t offset, struct fuse_file_info *fi)
+{
+  char fpath[1000];
+  char temp[1000];
+  	strcpy(temp,path);
+  	
+  	encrypt(temp);
+	sprintf(fpath, "%s%s",dirpath,temp);
+	
+	int res = 0;
+
+	DIR *dp;
+	struct dirent *de;
+
+	(void) offset;
+	(void) fi;
+
+	dp = opendir(fpath);
+	if (dp == NULL)
+		return -errno;
+
+	while ((de = readdir(dp)) != NULL) {
+		
+		memset(temp,'\0',sizeof(temp));
+		struct stat st;
+		memset(&st, 0, sizeof(st));
+		st.st_ino = de->d_ino;
+		st.st_mode = de->d_type << 12;
+		
+		char usrtarget1[20], grptarget[20], usrtarget2[20];
+		char pathskrg[1000];
+		gid_t gid;
+		uid_t uid;
+
+		strcpy(usrtarget1,"chipset");
+		strcpy(usrtarget2,"ic_controller");
+		strcpy(grptarget,"rusak");
+		strcpy(pathskrg,fpath);
+
+		strcpy(temp,de->d_name);
+		strcpy(pathskrg+strlen(pathskrg),temp);
+		stat(pathskrg,&st);
+
+		gid = st.st_gid;
+		uid = st.st_uid;
+
+		struct group *grp;
+		grp = getgrgid(gid);
+
+		char grpname[20];
+		strcpy(grpname, grp->gr_name);
+
+		struct passwd *usr;
+		usr = getpwuid(uid);
+
+		char usrname[20];
+		strcpy(usrname, usr->pw_name);
+
+		if( ((strcmp(usrname,usrtarget1) == 0) || (strcmp(usrname,usrtarget2) == 0)) && (strcmp(grpname,grptarget) == 0) )
+		{
+			FILE *cek, *target;
+			cek = fopen(pathskrg,"r");
+			if(cek==NULL){
+				target = fopen("/home/trasv/shift4/filemiris.txt","w");
+				if(target==NULL){
+				struct tm mod = *localtime(&(st.st_atime));
+				char isiFIle[1100];
+				sprintf(isiFIle, "%s %d %d %d:%d:%d %d-%d-%d", temp,gid,uid,mod.tm_hour,mod.tm_min,mod.tm_sec,mod.tm_mday,mod.tm_mon,mod.tm_year+1900);
+				fputs(isiFIle,target);
+				fclose(target);
+				printf("ini isinya cuk : %s\n\n\n", isiFIle);
+				remove(pathskrg);
+				}
+			}
+			fclose(cek);
+		}
+
+		if((strcmp(temp,".")!=0) && (strcmp(temp,"..")!=0)) {
+			decrypt(temp);
+			int lastDotChar = getLastCharPos(temp, '.');
+			if (((temp[lastDotChar-3]=='m' && temp[lastDotChar-2]=='k' && temp[lastDotChar-1]=='v') || 
+			(temp[lastDotChar-3]=='m' && temp[lastDotChar-2]=='p' && temp[lastDotChar-1]=='4'))){
+				continue;	
+			}
+			res = (filler(buf, temp, &st, 0));
+			if(res!=0) break;
+		}
+	}
+	closedir(dp);
+	return 0;
+}
+   ```
+
    4. Pada folder YOUTUBER, setiap membuat folder permission foldernya akan otomatis menjadi 750. Juga ketika membuat file permissionnya akan otomatis menjadi 640 dan ekstensi filenya akan bertambah “.iz1”. File berekstensi “.iz1” tidak bisa diubah permissionnya dan memunculkan error bertuliskan “File ekstensi iz1 tidak boleh diubah permissionnya.”
    
    Jawab:
@@ -275,3 +374,187 @@ Jika ditemukan file dengan spesifikasi tersebut ketika membuka direktori, Atta a
    };
    ```
    5. Ketika mengedit suatu file dan melakukan save, maka akan terbuat folder baru bernama Backup kemudian hasil dari save tersebut akan disimpan pada backup dengan nama namafile_[timestamp].ekstensi. Dan ketika file asli dihapus, maka akan dibuat folder bernama RecycleBin, kemudian file yang dihapus beserta semua backup dari file yang dihapus tersebut (jika ada) di zip dengan nama namafile_deleted_[timestamp].zip dan ditaruh ke dalam folder RecycleBin (file asli dan backup terhapus). Dengan format [timestamp] adalah yyyy-MM-dd_HH:mm:ss
+   
+   Jawab :
+   
+   Pada soal ini kita memodifikasi 2 fungsi. yang pertama yaitu write, di write kita menambahkan sintaks untuk mengambil nama file, dan ekstensi yang telah diedit, juga mengambil waktu terakhir dimodifikasi dan membuat file baru di folder backup dengan format seperti di soal.
+   
+   ```
+   static int xmp_write(const char *path, const char *buf, size_t size,
+		     off_t offset, struct fuse_file_info *fi)
+{
+	char fpath[1000], temp[1000],temp2[1000];
+	
+	strcpy(temp, path);	
+	encrypt(temp);
+
+	if(strcmp(path,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,temp);
+
+	int fd;
+	int res;
+
+	(void) fi;
+	fd = open(fpath, O_WRONLY);
+	if (fd == -1)
+		return -errno;
+
+	res = pwrite(fd, buf, size, offset);
+	if (res == -1)
+		res = -errno;
+
+	close(fd);
+	
+	strcpy(temp2,path);
+	encrypt(temp2);
+	sprintf(temp, "%s/%s", dirpath,temp2);
+
+	if(access(temp, R_OK)<0)				//JIKA FILE TIDAK ADA
+		return res;
+
+
+	char pathBackup[1000] = "/home/trasv/shift4/Backup";
+	mkdir(pathBackup, 0777);
+
+	char filenameNoExt[1000], ext[100], timestamp[1000], fileBackup[1000];
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	sprintf(timestamp, "%04d-%02d-%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	int slash = getLastCharPos(path, '/');
+	int dot = getLastCharPos(path, '.');
+	
+	if (dot==0) {
+		dot = strlen(path);
+		ext[0] = '\0';
+	}
+	else{
+		strcpy(ext, path+dot);
+	}
+
+	strncpy(filenameNoExt, path+slash+1, dot-(slash+1));
+	filenameNoExt[dot-(slash+1)] = '\0';
+	
+	sprintf(fileBackup,"%s_%s%s", filenameNoExt, timestamp, ext);
+	encrypt(fileBackup);
+	
+	sprintf(temp, "%s%s", dirpath, temp2);
+	
+	FILE *source = fopen(temp, "r");
+
+	sprintf(temp, "%s/%s", pathBackup, fileBackup);
+	
+	FILE *target = fopen(temp, "w");
+
+	char ch;
+	while ((ch = fgetc(source)) != EOF)
+		fprintf(target, "%c", ch);
+
+	fclose(target);
+	fclose(source);
+	return res;
+}
+
+```
+   
+   Kita harus memodifikasi fungsi yang kedua yaitu pada fungsi unlink. dimana disana kita menambahkan sintaks untuk mengambil nama file dan ekstensi, lalu kita mengambil timestamp terakhir lalu kita zip semua file asli, dan backup, dan zip itu dimasukkan ke folder recycle bin, lalu file aslinya kita hapus.
+   
+   ```
+   static int xmp_unlink(const char *path)
+{
+	char fpath[1000], temp[1000];
+	strcpy(temp, path);
+	encrypt(temp);
+
+	if(strcmp(temp,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,temp);
+
+	int res, isFile, status;
+
+	isFile = access(fpath, F_OK);
+
+	if(isFile<0)				//JIKA BUKAN FILE
+		return 0;
+
+	char backup[100] = "Backup";
+	char command[1000], timestamp[100], FileZip[1000], namaFile[1000], ext[1000],
+			filenameNoExt[1000], namaRecycleBin[100]="RecycleBin";
+
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	sprintf(timestamp, "%04d-%02d-%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	int slash = getLastCharPos(path, '/');
+	int dot = getLastCharPos(path, '.');
+	
+	if (dot==0)
+		dot = strlen(path);
+	else{
+		strcpy(ext, path+dot);
+	}
+	//char c[100];
+	//strcpy(c,'/');
+	//strcpy(namaFile, c);
+
+	strcpy(namaFile, path);
+	printf("------------------%s\n",namaFile);
+	/*int i,len=strlen(namaFile);
+	for(i=1;i<len-1;i++)
+	{
+		namaFile[i-1]=namaFile[i];
+	}
+	namaFile[len-1]='\0';*/
+	char* namaFile1=namaFile+1;
+	strcpy(namaFile,namaFile1);
+	strncpy(filenameNoExt, path+slash+1, dot-(slash+1));
+	filenameNoExt[dot-(slash+1)] = '\0';
+
+	sprintf(FileZip, "%s_deleted_%s", filenameNoExt, timestamp);
+	encrypt(FileZip);
+	encrypt(namaFile);
+	encrypt(filenameNoExt);
+	printf("------------------%s\n",namaFile);
+	sprintf(command, "cd %s && mkdir -p '%s' && zip '%s/%s' '%s' '%s/%s'* && rm -f '%s/%s'*", dirpath, namaRecycleBin,namaRecycleBin, FileZip, namaFile, backup, filenameNoExt, backup, filenameNoExt);
+
+	if (fork()==0)
+		execlp("bash","bash", "-c", command, NULL);
+
+	while((wait(&status))>0);
+
+	res = unlink(fpath);
+	
+	if (res == -1)
+		return -errno;
+
+	return 0;
+}
+
+   ```
+
+lalu terakhir untuk mempermudah pengerjaan, dibuat fungsi untuk mengambil kejadian pertama dari sebuah character dari string, kalau strchr dari depan, fungsi ini mengambil dari belakang.
+
+```
+int getLastCharPos(char *str, char chr){
+	char *posChar = NULL;
+	char *tempPosChar = strchr(str, chr);
+
+ 	while(tempPosChar != NULL){
+		posChar = tempPosChar;
+
+ 		tempPosChar = strchr(tempPosChar+1, chr);
+	}
+	if(posChar==NULL)
+		return 0;
+
+ 	return (int) (posChar-str);
+}
+```
+
